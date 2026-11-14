@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JARVIS AI System</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#030712">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JARVIS">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkpBUlZJUyBBSSBBc3Npc3RhbnQiLAogICJzaG9ydF9uYW1lIjogIkpBUlZJUyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDMwNzEyIiwKICAidGhlbWVfY29sb3IiOiAiIzAwZjNmZiIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vaW1nLmljb25zODQuY29tL3BuZy81MTIvY3VzdG9tL2phcnZpcy5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
+
+    <!-- Tailwind CSS & Lucide Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        jarvis: {
+                            cyan: '#00f3ff',
+                            blue: '#0088ff',
+                            darkBlue: '#002b4d',
+                            bg: '#030712',
+                            panel: 'rgba(6, 25, 44, 0.75)',
+                            glow: 'rgba(0, 243, 255, 0.25)'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        rajdhani: ['Rajdhani', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #030712;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Sci-Fi Glow Effects */
+        .cyan-glow {
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }
+        .text-glow {
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.7);
+        }
+        .border-glow {
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.15), 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+
+        /* Arc Reactor Animation */
+        @keyframes spin-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); box-shadow: 0 0 30px rgba(0, 243, 255, 0.8); }
+        }
+
+        .animate-spin-slow { animation: spin-slow 18s linear infinite; }
+        .animate-spin-reverse { animation: spin-reverse 12s linear infinite; }
+        .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #0088ff; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between pb-20 select-none">
+
+    <!-- Top Header HUD -->
+    <header class="sticky top-0 z-40 bg-gray-950/90 backdrop-blur-md border-b border-jarvis-cyan/30 px-4 py-3">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="relative w-10 h-10 flex items-center justify-center">
+                    <div class="absolute inset-0 border-2 border-jarvis-cyan rounded-full border-t-transparent animate-spin-slow"></div>
+                    <i data-lucide="cpu" class="w-5 h-5 text-jarvis-cyan"></i>
+                </div>
+                <div>
+                    <h1 class="font-orbitron text-lg font-black tracking-widest text-jarvis-cyan text-glow flex items-center gap-2">
+                        JARVIS <span class="text-[10px] px-1.5 py-0.5 rounded bg-jarvis-cyan/20 border border-jarvis-cyan/40 text-white font-mono">v4.8</span>
+                    </h1>
+                    <div class="text-xs text-slate-400 font-mono flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span class="text-emerald-400 font-semibold">ÇEVRİMİÇİ</span> | Yusuf Sertkaya (7-F)
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="toggleAudioWake()" id="mic-toggle-btn" class="p-2.5 rounded-full border border-jarvis-cyan/40 bg-jarvis-cyan/10 text-jarvis-cyan hover:bg-jarvis-cyan/20 active:scale-95 transition">
+                <i data-lucide="mic" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Dynamic Container -->
+    <main class="max-w-md mx-auto w-full px-4 pt-4 flex-grow">
+
+        <!-- Banner Alerts Section -->
+        <div id="alerts-container" class="space-y-3 mb-5">
+            <!-- Exam Reminder Banner -->
+            <div class="border-glow bg-amber-950/30 border-amber-500/50 rounded-xl p-3 flex items-start space-x-3">
+                <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-400 shrink-0 mt-0.5 animate-bounce"></i>
+                <div>
+                    <h4 class="font-orbitron text-sm font-bold text-amber-400 uppercase tracking-wide">SINAV DÖNEMİ HATIRLATICI</h4>
+                    <p class="text-xs text-amber-200 mt-0.5">13 - 14 Aralık Sınavları yaklaşıyor! <strong>"Ders çalış, git ders çalış, git kitap oku!"</strong></p>
+                </div>
+            </div>
+
+            <!-- Prayer Time Banner -->
+            <div class="border-glow bg-cyan-950/30 border-jarvis-cyan/50 rounded-xl p-3 flex items-start space-x-3">
+                <i data-lucide="clock" class="w-6 h-6 text-jarvis-cyan shrink-0 mt-0.5"></i>
+                <div class="flex-grow">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-orbitron text-sm font-bold text-jarvis-cyan uppercase">ANKARA VAKİT UYARISI</h4>
+                        <span class="text-[11px] font-mono bg-jarvis-cyan/20 px-2 py-0.5 rounded text-jarvis-cyan">Sonraki: Akşam</span>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-1">Abdest al, namaza yaklaşık 10 dakika var. Hadi namaz kıl!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: ANA SAYFA (HUD CORE) -->
+        <section id="tab-ana" class="tab-content space-y-6">
+            <!-- Arc Reactor Interactive HUD -->
+            <div class="relative py-8 flex flex-col items-center justify-center">
+                <div class="relative w-64 h-64 flex items-center justify-center">
+                    <!-- Outer Rotating Ring -->
+                    <div class="absolute inset-0 border-2 border-dashed border-jarvis-cyan/40 rounded-full animate-spin-slow"></div>
+                    <!-- Middle Reverse Ring -->
+                    <div class="absolute inset-4 border border-jarvis-blue/60 rounded-full border-b-transparent border-t-transparent animate-spin-reverse"></div>
+                    <!-- Inner Glowing Core -->
+                    <div class="w-36 h-36 rounded-full bg-gradient-to-tr from-cyan-900 via-jarvis-darkBlue to-cyan-500/30 border-2 border-jarvis-cyan flex flex-col items-center justify-center cursor-pointer animate-pulse-glow cyan-glow" onclick="triggerWakeUp()">
+                        <i data-lucide="zap" class="w-10 h-10 text-jarvis-cyan mb-1"></i>
+                        <span class="font-orbitron text-xs tracking-wider text-cyan-200 font-bold">JARVIS CORE</span>
+                        <span class="text-[10px] text-cyan-400/80 font-mono">DOKUN & UYANDIR</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <p id="jarvis-status-text" class="font-orbitron text-sm text-jarvis-cyan text-glow">"Emrinizdeyim Efendim Yusuf Sertkaya."</p>
+                    <p class="text-xs text-slate-400 mt-1 font-mono">Ankara, TR | Sistem Stabil %100</p>
+                </div>
+            </div>
+
+            <!-- Dashboard Quick Cards -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="border-glow bg-jarvis-panel p-3.5 rounded-xl">
+                    <div class="flex items-center space-x-2 text-jarvis-cyan mb-1">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        <span class="font-orbitron text-xs font-bold">KULLANICI BİLGİSİ</span>
+                    </div>
+                    <p class="text-sm font-semibold text-white">Yusuf Sertkaya</p>
+                    <p class="text-xs text-slate-400">13 Yaşında | 7-F Sınıfı</p>
+                    <p class="text-[11px] text-amber-400 mt-2">Doğum Günü: 7 Ağustos</p>
+                </div>
+
+                <div class="border-glow bg-jarvis-panel p-3.5 rounded-xl">
+                    <div class="flex items-center space-x-2 text-jarvis-cyan mb-1">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <span class="font-orbitron text-xs font-bold">KİTAPLIK ÖZETİ</span>
+                    </div>
+                    <p class="text-sm font-semibold text-white" id="quick-book-stats">29 Kitap Kayıtlı</p>
+                    <p class="text-xs text-emerald-400" id="quick-read-stats">23 Okundu | 6 Okunmadı</p>
+                    <button onclick="switchTab('kitaplik')" class="mt-2 text-xs text-jarvis-cyan underline flex items-center gap-1">
+                        Detaylar <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: SOHBET -->
+        <section id="tab-sohbet" class="tab-content hidden flex flex-col h-[70vh]">
+            <div class="border-glow bg-jarvis-panel rounded-xl flex-grow p-4 flex flex-col overflow-hidden">
+                <!-- Chat Messages Scroll Container -->
+                <div id="chat-messages" class="flex-grow overflow-y-auto space-y-3 pr-1">
+                    <div class="bg-jarvis-darkBlue/60 border border-jarvis-cyan/30 p-3 rounded-xl max-w-[85%]">
+                        <p class="text-xs font-orbitron text-jarvis-cyan font-bold mb-1">JARVIS</p>
+                        <p class="text-sm text-slate-200">Merhaba Efendim Yusuf Sertkaya. Ben sizin sadık asistanınız Jarvis. Size nasıl yardımcı olabilirim?</p>
+                    </div>
+                </div>
+
+                <!-- Chat Input Form -->
+                <form onsubmit="handleChatSubmit(event)" class="mt-3 flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Jarvis'e bir şey sorun..." class="flex-grow bg-slate-900 border border-jarvis-cyan/40 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-jarvis-cyan font-sans placeholder-slate-500">
+                    <button type="submit" class="bg-jarvis-cyan/20 border border-jarvis-cyan text-jarvis-cyan px-4 py-2.5 rounded-xl font-bold hover:bg-jarvis-cyan/30 active:scale-95 transition flex items-center justify-center">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 3: KİTAPLIK -->
+        <section id="tab-kitaplik" class="tab-content hidden space-y-4">
+            <div class="flex flex-col sm:flex-row gap-2 justify-between items-start sm:items-center">
+                <div>
+                    <h2 class="font-orbitron text-lg font-bold text-jarvis-cyan text-glow">YUSUF'UN KİTAPLIĞI</h2>
+                    <p class="text-xs text-slate-400">Toplam kayıtlı kitaplar ve okuma durumları</p>
+                </div>
+                <button onclick="openAddBookModal()" class="w-full sm:w-auto bg-jarvis-cyan/20 border border-jarvis-cyan text-jarvis-cyan px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 hover:bg-jarvis-cyan/30">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> YENİ KİTAP EKLE
+                </button>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <div class="flex gap-2">
+                <div class="relative flex-grow">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                    <input type="text" id="book-search" oninput="renderBooks()" placeholder="Kitap veya yazar ara..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-jarvis-cyan">
+                </div>
+                <select id="book-filter" onchange="renderBooks()" class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-300 focus:outline-none focus:border-jarvis-cyan">
+                    <option value="all">Tümü</option>
+                    <option value="read">Okundu</option>
+                    <option value="unread">Okunmadı</option>
+                </select>
+            </div>
+
+            <!-- Books List Container -->
+            <div id="books-list" class="space-y-3 max-h-[58vh] overflow-y-auto pr-1">
+                <!-- Dynamic Books rendered here -->
+            </div>
+        </section>
+
+        <!-- TAB 4: VAKİT (PRAYER TIMES) -->
+        <section id="tab-vakit" class="tab-content hidden space-y-4">
+            <div class="border-glow bg-jarvis-panel p-4 rounded-xl text-center">
+                <i data-lucide="compass" class="w-8 h-8 text-jarvis-cyan mx-auto mb-2 animate-spin-slow"></i>
+                <h3 class="font-orbitron font-bold text-jarvis-cyan text-base">ANKARA NAMAZ VAKİTLERİ</h3>
+                <p class="text-xs text-slate-400">Jarvis Otomatik Konum & Takvim Servisi</p>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900 border border-slate-800">
+                    <span class="text-sm font-semibold text-slate-300">İmsak</span>
+                    <span class="font-mono text-sm text-jarvis-cyan">05:48</span>
+                </div>
+                <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900 border border-slate-800">
+                    <span class="text-sm font-semibold text-slate-300">Güneş</span>
+                    <span class="font-mono text-sm text-jarvis-cyan">07:12</span>
+                </div>
+                <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900 border border-slate-800">
+                    <span class="text-sm font-semibold text-slate-300">Öğle</span>
+                    <span class="font-mono text-sm text-jarvis-cyan">12:45</span>
+                </div>
+                <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900 border border-slate-800">
+                    <span class="text-sm font-semibold text-slate-300">İkindi</span>
+                    <span class="font-mono text-sm text-jarvis-cyan">15:32</span>
+                </div>
+                <div class="flex justify-between items-center p-3 rounded-xl bg-jarvis-cyan/20 border border-jarvis-cyan">
+                    <span class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-jarvis-cyan animate-ping"></span> Akşam (Sıradaki)
+                    </span>
+                    <span class="font-mono text-sm font-bold text-jarvis-cyan">18:02</span>
+                </div>
+                <div class="flex justify-between items-center p-3 rounded-xl bg-slate-900 border border-slate-800">
+                    <span class="text-sm font-semibold text-slate-300">Yatsı</span>
+                    <span class="font-mono text-sm text-jarvis-cyan">19:21</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: SİSTEM & İZİNLER -->
+        <section id="tab-sistem" class="tab-content hidden space-y-4">
+            <div class="border-glow bg-jarvis-panel p-4 rounded-xl">
+                <h3 class="font-orbitron font-bold text-jarvis-cyan text-sm mb-3">HARDWARE & CİHAZ İZİNLERİ</h3>
+                
+                <div class="space-y-3">
+                    <button onclick="requestPermission('Ekran Görünümü')" class="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-jarvis-cyan text-left">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="smartphone" class="w-5 h-5 text-jarvis-cyan"></i>
+                            <div>
+                                <p class="text-xs font-bold text-white">Ekran Canlı İzleme</p>
+                                <p class="text-[10px] text-slate-400">Jarvis ekranınızdaki içerikleri analiz eder</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30">İZİN VER</span>
+                    </button>
+
+                    <button onclick="requestPermission('Kamera ve Canlı Görüntü')" class="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-jarvis-cyan text-left">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="camera" class="w-5 h-5 text-jarvis-cyan"></i>
+                            <div>
+                                <p class="text-xs font-bold text-white">Canlı Kamera & Galeri</p>
+                                <p class="text-[10px] text-slate-400">Anlık görüntü işleme izni</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30">İZİN VER</span>
+                    </button>
+
+                    <button onclick="requestPermission('Mikrofon')" class="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-jarvis-cyan text-left">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="mic" class="w-5 h-5 text-jarvis-cyan"></i>
+                            <div>
+                                <p class="text-xs font-bold text-white">Mikrofon & Sesli Komut</p>
+                                <p class="text-[10px] text-slate-400">'Hey Jarvis' ses aktivasyonu</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30">İZİN VER</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hardware Recommendation Box -->
+            <div class="border-glow bg-slate-950/80 p-4 rounded-xl">
+                <div class="flex items-center space-x-2 text-amber-400 mb-2">
+                    <i data-lucide="cpu" class="w-5 h-5"></i>
+                    <h4 class="font-orbitron text-xs font-bold">JARVIS TEKNOLOJİ TAVSİYESİ</h4>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Efendim Yusuf, mevcut cihaz kapasitelerinizi analiz ettim. Maksimum performans ve Jarvis AI tam entegrasyonu için <strong>iPhone 13 Pro Max</strong> yerine gelecekteki amiral gemisi olan <strong>iPhone 18 Pro Max</strong> modelini hedeflemenizi tavsiye ederim.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-gray-950/95 border-t border-jarvis-cyan/30 backdrop-blur-lg">
+        <div class="max-w-md mx-auto grid grid-cols-5 px-1 py-2">
+            <button onclick="switchTab('ana')" id="nav-ana" class="nav-item flex flex-col items-center py-1 text-jarvis-cyan">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-orbitron font-semibold mt-1">ANA</span>
+            </button>
+            <button onclick="switchTab('sohbet')" id="nav-sohbet" class="nav-item flex flex-col items-center py-1 text-slate-500 hover:text-jarvis-cyan">
+                <i data-lucide="message-square" class="w-5 h-5"></i>
+                <span class="text-[10px] font-orbitron font-semibold mt-1">SOHBET</span>
+            </button>
+            <button onclick="switchTab('kitaplik')" id="nav-kitaplik" class="nav-item flex flex-col items-center py-1 text-slate-500 hover:text-jarvis-cyan">
+                <i data-lucide="book-open" class="w-5 h-5"></i>
+                <span class="text-[10px] font-orbitron font-semibold mt-1">KİTAPLIK</span>
+            </button>
+            <button onclick="switchTab('vakit')" id="nav-vakit" class="nav-item flex flex-col items-center py-1 text-slate-500 hover:text-jarvis-cyan">
+                <i data-lucide="clock" class="w-5 h-5"></i>
+                <span class="text-[10px] font-orbitron font-semibold mt-1">VAKİT</span>
+            </button>
+            <button onclick="switchTab('sistem')" id="nav-sistem" class="nav-item flex flex-col items-center py-1 text-slate-500 hover:text-jarvis-cyan">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span class="text-[10px] font-orbitron font-semibold mt-1">SİSTEM</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Add Book Modal -->
+    <div id="add-book-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-jarvis-cyan rounded-2xl max-w-sm w-full p-5 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h3 class="font-orbitron font-bold text-jarvis-cyan text-sm">YENİ KİTAP EKLE</h3>
+                <button onclick="closeAddBookModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="handleAddBookSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="text-slate-300">Kitap Adı</label>
+                    <input type="text" id="modal-title" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white mt-1">
+                </div>
+                <div>
+                    <label class="text-slate-300">Yazar</label>
+                    <input type="text" id="modal-author" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white mt-1">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-slate-300">Sayfa Sayısı</label>
+                        <input type="number" id="modal-pages" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white mt-1">
+                    </div>
+                    <div>
+                        <label class="text-slate-300">Kaldığım Sayfa</label>
+                        <input type="number" id="modal-current-page" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white mt-1">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-slate-300">Durum</label>
+                    <select id="modal-status" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white mt-1">
+                        <option value="Okundu">Okundu</option>
+                        <option value="Okunmadı">Okunmadı</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-jarvis-cyan text-slate-950 font-orbitron font-bold py-2.5 rounded-xl hover:bg-cyan-300">
+                    KAYDET
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        // Initial 29 Books Database
+        const defaultBooks = [
+            { id: 1, title: "Satranç Kulübü", pages: 151, author: "Sezar", status: "Okundu", currentPage: 151 },
+            { id: 2, title: "Dinozor Dedektifleri", pages: 96, author: "Levent Öztürk", status: "Okundu", currentPage: 96 },
+            { id: 3, title: "İlkin Timi", pages: 122, author: "Metin Özdamarlar", status: "Okundu", currentPage: 122 },
+            { id: 4, title: "Harry Potter 1 Felsefe Taşı", pages: 271, author: "J. K. Rowling", status: "Okunmadı", currentPage: 105 },
+            { id: 5, title: "Düşler Köyü", pages: 120, author: "Özgür Toprak", status: "Okundu", currentPage: 120 },
+            { id: 6, title: "Robolar", pages: 140, author: "Mert Arık", status: "Okunmadı", currentPage: 0 },
+            { id: 7, title: "35 Kilo Tembel Teneke", pages: 92, author: "Anna Gavalda", status: "Okunmadı", currentPage: 42 },
+            { id: 8, title: "Çocukların Kamera Arkası", pages: 144, author: "Ferhat Taşetekin", status: "Okundu", currentPage: 144 },
+            { id: 9, title: "15 Yaşında Bir Kaptan", pages: 110, author: "Jules Verne", status: "Okundu", currentPage: 110 },
+            { id: 10, title: "Uzay", pages: 188, author: "Cleave Gifford", status: "Okundu", currentPage: 188 },
+            { id: 11, title: "Paskalya Çocukları", pages: 236, author: "Ferenc Molnar", status: "Okundu", currentPage: 236 },
+            { id: 12, title: "Gül ve Yaşayan Yarışçı", pages: 181, author: "Ahmet Önel", status: "Okundu", currentPage: 181 },
+            { id: 13, title: "Moroların Çocukları", pages: 183, author: "Gabriel Celima", status: "Okundu", currentPage: 183 },
+            { id: 14, title: "Tombik Balık", pages: 112, author: "A. B. Bektaş", status: "Okundu", currentPage: 112 },
+            { id: 15, title: "Yurdumu Özledim", pages: 174, author: "Bülent Dayıoğlu", status: "Okundu", currentPage: 174 },
+            { id: 16, title: "Isladığım Kralı", pages: 150, author: "Michael Morpurgo", status: "Okundu", currentPage: 150 },
+            { id: 17, title: "Enes Bin Malik", pages: 75, author: "Kenan Oral", status: "Okundu", currentPage: 75 },
+            { id: 18, title: "Sad Bin Ebi Vakkas", pages: 160, author: "Muhammed Emin Yıldırım", status: "Okunmadı", currentPage: 0 },
+            { id: 19, title: "Hansel ile Gretel", pages: 96, author: "Jacob Wilhelm Grimm", status: "Okundu", currentPage: 96 },
+            { id: 20, title: "Dönme Dolap", pages: 80, author: "Gülnar Kendeğer", status: "Okundu", currentPage: 80 },
+            { id: 21, title: "Küçük Kalabalık", pages: 64, author: "Samet Behrengi", status: "Okundu", currentPage: 64 },
+            { id: 22, title: "Mercan Adası", pages: 90, author: "R. M. Ballantyne", status: "Okundu", currentPage: 90 },
+            { id: 23, title: "Yıldız Tozu", pages: 64, author: "Mustafa Kutlu", status: "Okundu", currentPage: 64 },
+            { id: 24, title: "Uzaya Giden Tren", pages: 63, author: "Mert Arık", status: "Okunmadı", currentPage: 0 },
+            { id: 25, title: "Ampullerin Dünyası", pages: 64, author: "H. G. Wells", status: "Okundu", currentPage: 64 },
+            { id: 26, title: "Ampulün Mucidi Thomas Alva Edison", pages: 64, author: "Leyla Fidanay", status: "Okundu", currentPage: 64 },
+            { id: 27, title: "Uzayın Uzun Lafın Kısası", pages: 225, author: "A. B. Bektaş", status: "Okundu", currentPage: 225 },
+            { id: 28, title: "Dünyayı Kurtaran Arı", 130, author: "Atay Sözer", status: "Okundu", currentPage: 130 },
+            { id: 29, title: "Mariana Çukuru", pages: 88, author: "Serap Kardan", status: "Okundu", currentPage: 88 }
+        ];
+
+        let books = JSON.parse(localStorage.getItem('jarvis_books')) || defaultBooks;
+
+        // Initialize Icons
+        window.onload = function() {
+            lucide.createIcons();
+            renderBooks();
+            updateBookStats();
+            speakSpeech("Merhaba efendim Yusuf Sertkaya, Jarvis sistemi hazır.");
+        };
+
+        // Speech Synthesis Helper
+        function speakSpeech(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'tr-TR';
+                utterance.pitch = 0.9;
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Wake Trigger
+        function triggerWakeUp() {
+            speakSpeech("Merhaba efendim, buradayım.");
+            document.getElementById('jarvis-status-text').innerText = '"Merhaba efendim, buradayım."';
+            setTimeout(() => {
+                document.getElementById('jarvis-status-text').innerText = '"Emrinizdeyim Efendim Yusuf Sertkaya."';
+            }, 4000);
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('text-jarvis-cyan');
+                el.classList.add('text-slate-500');
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabName}`);
+            activeNav.classList.remove('text-slate-500');
+            activeNav.classList.add('text-jarvis-cyan');
+
+            if (tabName === 'kitaplik') renderBooks();
+        }
+
+        // Render Books
+        function renderBooks() {
+            const container = document.getElementById('books-list');
+            const searchTerm = document.getElementById('book-search')?.value.toLowerCase() || '';
+            const filterValue = document.getElementById('book-filter')?.value || 'all';
+
+            container.innerHTML = '';
+
+            const filtered = books.filter(b => {
+                const matchesSearch = b.title.toLowerCase().includes(searchTerm) || b.author.toLowerCase().includes(searchTerm);
+                const matchesFilter = filterValue === 'all' ? true : (filterValue === 'read' ? b.status === 'Okundu' : b.status === 'Okunmadı');
+                return matchesSearch && matchesFilter;
+            });
+
+            filtered.forEach(book => {
+                const isRead = book.status === 'Okundu';
+                const progressPercent = Math.min(100, Math.round((book.currentPage / book.pages) * 100));
+
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border ${isRead ? 'bg-slate-900/60 border-slate-800' : 'bg-jarvis-darkBlue/40 border-jarvis-cyan/40'} flex flex-col space-y-2`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-sm font-bold text-white">${book.title}</h4>
+                            <p class="text-xs text-slate-400">${book.author} | ${book.pages} Sayfa</p>
+                        </div>
+                        <button onclick="toggleBookStatus(${book.id})" class="text-[10px] px-2 py-1 rounded font-bold border ${isRead ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}">
+                            ${book.status}
+                        </button>
+                    </div>
+
+                    ${!isRead ? `
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-jarvis-cyan h-full" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>Kaldığı Sayfa: ${book.currentPage}</span>
+                            <span>%${progressPercent} tamamlandı</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="flex gap-2 pt-1 border-t border-slate-800/60">
+                        <button onclick="summarizeBook('${book.title}')" class="text-[11px] text-jarvis-cyan hover:underline flex items-center gap-1">
+                            <i data-lucide="file-text" class="w-3 h-3"></i> Özet Çıkar
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+            updateBookStats();
+        }
+
+        // Toggle Book Read Status
+        function toggleBookStatus(id) {
+            books = books.map(b => {
+                if (b.id === id) {
+                    const newStatus = b.status === 'Okundu' ? 'Okunmadı' : 'Okundu';
+                    return { ...b, status: newStatus, currentPage: newStatus === 'Okundu' ? b.pages : b.currentPage };
+                }
+                return b;
+            });
+            localStorage.setItem('jarvis_books', JSON.stringify(books));
+            renderBooks();
+        }
+
+        // Update Stats Dashboard
+        function updateBookStats() {
+            const readCount = books.filter(b => b.status === 'Okundu').length;
+            const unreadCount = books.length - readCount;
+            document.getElementById('quick-book-stats').innerText = `${books.length} Kitap Kayıtlı`;
+            document.getElementById('quick-read-stats').innerText = `${readCount} Okundu | ${unreadCount} Okunmadı`;
+        }
+
+        // Add Book Modal logic
+        function openAddBookModal() { document.getElementById('add-book-modal').classList.remove('hidden'); }
+        function closeAddBookModal() { document.getElementById('add-book-modal').classList.add('hidden'); }
+
+        function handleAddBookSubmit(e) {
+            e.preventDefault();
+            const newBook = {
+                id: Date.now(),
+                title: document.getElementById('modal-title').value,
+                author: document.getElementById('modal-author').value,
+                pages: parseInt(document.getElementById('modal-pages').value),
+                currentPage: parseInt(document.getElementById('modal-current-page').value) || 0,
+                status: document.getElementById('modal-status').value
+            };
+
+            books.unshift(newBook);
+            localStorage.setItem('jarvis_books', JSON.stringify(books));
+            closeAddBookModal();
+            renderBooks();
+            speakSpeech(`${newBook.title} kütüphanenize eklendi efendim.`);
+        }
+
+        // Chat Logic
+        function handleChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            appendChatMessage('YUSUF', message, false);
+            input.value = '';
+
+            // Jarvis Response Generation
+            setTimeout(() => {
+                let reply = "Anlaşıldı efendim. Emirlerinizi işliyorum.";
+                const msgLower = message.toLowerCase();
+
+                if (msgLower.includes('hey jarvis') || msgLower.includes('jarvis')) {
+                    reply = "Merhaba efendim, buradayım. Size nasıl yardımcı olabilirim?";
+                } else if (msgLower.includes('kitap') && msgLower.includes('öner')) {
+                    reply = "Efendim, kitaplığınızdaki macera türüne dayanarak '80 Günde Devri Alem' veya 'Define Adası' okumanızı tavsiye ederim.";
+                } else if (msgLower.includes('sınav')) {
+                    reply = "13-14 Aralık sınav döneminize az kaldı Yusuf Bey! Lütfen ders çalışın ve kitap okumayı ihmal etmeyin.";
+                } else if (msgLower.includes('telefon') || msgLower.includes('öneri')) {
+                    reply = "Teknolojik donanım olarak iPhone 18 Pro Max hedeflemeniz performansınız için harika bir seçim olacaktır.";
+                }
+
+                appendChatMessage('JARVIS', reply, true);
+                speakSpeech(reply);
+            }, 600);
+        }
+
+        function appendChatMessage(sender, text, isJarvis) {
+            const container = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `${isJarvis ? 'bg-jarvis-darkBlue/60 border-jarvis-cyan/30' : 'bg-slate-800/80 border-slate-700 ml-auto'} border p-3 rounded-xl max-w-[85%]`;
+            msgDiv.innerHTML = `
+                <p class="text-xs font-orbitron font-bold mb-1 ${isJarvis ? 'text-jarvis-cyan' : 'text-slate-300'}">${sender}</p>
+                <p class="text-sm text-slate-200">${text}</p>
+            `;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function summarizeBook(title) {
+            switchTab('sohbet');
+            const prompt = `"${title}" kitabını bana kısaca özetler misin?`;
+            appendChatMessage('YUSUF', prompt, false);
+            setTimeout(() => {
+                const summary = `"${title}" eseri ana temaları itibariyle etkileyici bir kurguya sahiptir. Jarvis hafızamda detayları kayıtlıdır.`;
+                appendChatMessage('JARVIS', summary, true);
+                speakSpeech(summary);
+            }, 500);
+        }
+
+        // Voice Wake Toggle Simulation
+        function toggleAudioWake() {
+            speakSpeech("Ses tanıma aktif. Hey Jarvis komutu bekleniyor.");
+            alert("Mikrofon dinlemede: 'Hey Jarvis' diyerek sesli yanıt alabilirsiniz.");
+        }
+
+        // Permission Request Popups
+        function requestPermission(type) {
+            alert(`[JARVIS İZİN PROTOKOLÜ]\n${type} erişimi için izin onaylandı.`);
+            speakSpeech(`${type} izni alındı efendim.`);
+        }
+    </script>
+</body>
+</html>

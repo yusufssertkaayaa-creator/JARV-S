@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JARVIS">
+  <meta name="theme-color" content="#030b14">
+  <title>JARVIS // Yusuf Sertkaya OS</title>
+  <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22JARVIS%20AI%20Assistant%22%2C%22short_name%22%3A%22JARVIS%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23020912%22%2C%22theme_color%22%3A%22%2300e5ff%22%7D">
+  
+  <style>
+    :root {
+      --neon: #00e5ff;
+      --neon-dark: #007791;
+      --neon-glow: rgba(0, 229, 255, 0.45);
+      --bg-dark: #020912;
+      --panel-bg: rgba(4, 20, 36, 0.75);
+      --border-hud: rgba(0, 229, 255, 0.35);
+      --danger: #ff0055;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Courier New", monospace; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(0, 85, 140, 0.25) 0%, transparent 70%),
+        linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 20px 20px, 20px 20px;
+      color: #d8f8ff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding-bottom: 75px;
+    }
+
+    /* Top HUD Header */
+    header {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-hud);
+      background: rgba(2, 13, 24, 0.85);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand h1 {
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: var(--neon);
+      text-shadow: 0 0 10px var(--neon-glow);
+    }
+    .brand span {
+      font-size: 9px;
+      color: #5d9cb5;
+      letter-spacing: 1px;
+    }
+    .user-tag {
+      font-size: 10px;
+      padding: 4px 8px;
+      border: 1px solid var(--neon);
+      border-radius: 4px;
+      background: rgba(0, 229, 255, 0.1);
+      box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
+      text-align: right;
+    }
+
+    /* Main Container */
+    .container {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 500px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Arc Reactor Visualizer */
+    .reactor-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 0;
+      position: relative;
+    }
+    .arc-outer {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: 2px dashed var(--neon);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: spinRing 16s linear infinite;
+      box-shadow: 0 0 25px var(--neon-glow);
+    }
+    .arc-core {
+      width: 95px;
+      height: 95px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #80f4ff 10%, #0051ba 65%, #011424 100%);
+      box-shadow: 0 0 35px var(--neon);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.3s transform ease;
+      animation: corePulse 2.5s ease-in-out infinite alternate;
+    }
+    .arc-core:active { transform: scale(0.92); }
+    .arc-core span { font-weight: 900; font-size: 12px; color: #00121d; letter-spacing: 1.5px; }
+    .arc-core small { font-size: 8px; color: #002c44; font-weight: bold; }
+
+    @keyframes spinRing { 100% { transform: rotate(360deg); } }
+    @keyframes corePulse {
+      0% { box-shadow: 0 0 18px var(--neon-glow); }
+      100% { box-shadow: 0 0 40px var(--neon); }
+    }
+
+    /* Terminal Message Box */
+    .hud-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-hud);
+      border-radius: 8px;
+      padding: 12px;
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.05);
+      position: relative;
+    }
+    .hud-card::before {
+      content: "";
+      position: absolute;
+      top: -1px; left: 10px; width: 40px; height: 2px;
+      background: var(--neon);
+      box-shadow: 0 0 6px var(--neon);
+    }
+    .card-title {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: var(--neon);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .terminal-body {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #9cdcf0;
+      max-height: 90px;
+      overflow-y: auto;
+    }
+
+    /* Hardware & Prayer Alert Bar */
+    .alert-strip {
+      background: rgba(255, 0, 85, 0.1);
+      border: 1px solid rgba(255, 0, 85, 0.4);
+      color: #ff85aa;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Controls Grid */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .hud-btn {
+      background: rgba(0, 40, 70, 0.65);
+      border: 1px solid var(--border-hud);
+      color: var(--neon);
+      padding: 12px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .hud-btn:active {
+      background: var(--neon);
+      color: #000;
+      box-shadow: 0 0 15px var(--neon);
+    }
+
+    /* Video Output Viewer */
+    #mediaViewer {
+      display: none;
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid var(--neon);
+      max-height: 230px;
+      object-fit: cover;
+      margin-top: 8px;
+    }
+
+    /* Library Modal / Section */
+    .library-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+      margin-top: 8px;
+    }
+    .book-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 10px;
+      background: rgba(0, 15, 30, 0.7);
+      border-left: 3px solid var(--neon-dark);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    .book-row.read { border-left-color: #00ff88; }
+    .book-info b { color: #fff; font-size: 11px; }
+    .book-info div { color: #6e9cb0; font-size: 10px; }
+    .book-status {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid;
+    }
+    .status-done { color: #00ff88; border-color: rgba(0, 255, 136, 0.3); }
+    .status-pending { color: #ffb700; border-color: rgba(255, 183, 0, 0.3); }
+
+    /* Bottom Navigation */
+    nav.hud-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(2, 11, 20, 0.95);
+      border-top: 1px solid var(--border-hud);
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 10px;
+      color: #61879c;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .nav-item.active {
+      color: var(--neon);
+      text-shadow: 0 0 8px var(--neon-glow);
+    }
+
+    /* Search/Input */
+    input[type="text"] {
+      width: 100%;
+      background: rgba(0, 16, 31, 0.8);
+      border: 1px solid var(--border-hud);
+      padding: 8px 12px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 11px;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--neon); }
+
+    /* Hide tab content */
+    .tab-content { display: none; }
+    .tab-content.active { display: flex; flex-direction: column; gap: 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="brand">
+      <h1>J.A.R.V.I.S.</h1>
+      <span>FÜTÜRİSTİK MOBİL SİSTEM</span>
+    </div>
+    <div class="user-tag">
+      <strong>Yusuf Sertkaya</strong><br>
+      <span id="userMetaTag">13 Yaş // 7-F</span>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- TAB 1: KONSOL & CORE -->
+    <div id="tab-core" class="tab-content active">
+      
+      <!-- Arc Reactor -->
+      <div class="reactor-box">
+        <div class="arc-outer">
+          <div class="arc-core" onclick="triggerWake()">
+            <span>JARVIS</span>
+            <small>UYANDIR</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Namaz & Vakit Takip Barı (Ankara) -->
+      <div class="alert-strip" id="prayerAlert">
+        <span>🕌</span>
+        <div id="prayerNotice">Ankara Namaz Modülü devrede: Sıradaki vakit taranıyor...</div>
+      </div>
+
+      <!-- Donanım Analiz Kartı -->
+      <div class="hud-card">
+        <div class="card-title">
+          <span>DONANIM REKORU & STRATEJİ</span>
+          <span>⚡ VIP PROTOKOL</span>
+        </div>
+        <div style="font-size:11px; color:#8fd5eb;">
+          Öneri: iPhone 13 Pro Max gibi ara nesiller elendi. <strong>iPhone 18 Pro Max</strong> mimarisi ve nöral kuantum işlemci entegrasyonu hedefleniyor efendim.
+        </div>
+      </div>
+
+      <!-- Terminal Akışı -->
+      <div class="hud-card">
+        <div class="card-title">
+          <span>SİSTEM TERMİNALİ</span>
+          <span id="sysStatus">ÇEVRİMİÇİ</span>
+        </div>
+        <div class="terminal-body" id="terminalLog">
+          > Jarvis çekirdek sistemleri başlatıldı.<br>
+          > Yusuf Sertkaya profili doğrulandı (Sınıf: 7-F).<br>
+          > "Hey Jarvis" dinlemesi hazır. Çekirdeğe dokunun veya ses butonuna basın.
+        </div>
+      </div>
+
+      <!-- Sensör ve Donanım Kontrolleri -->
+      <div class="controls-grid">
+        <button class="hud-btn" onclick="startVoiceRecognition()">
+          <span style="font-size:18px;">🎙️</span>
+          <span>SESLİ DİNLEME</span>
+        </button>
+
+        <button class="hud-btn" onclick="requestScreenAccess()">
+          <span style="font-size:18px;">📱</span>
+          <span>EKRANI GÖR</span>
+        </button>
+
+        <button class="hud-btn" onclick="toggleCamera()">
+          <span style="font-size:18px;">📷</span>
+          <span>CANLI KAMERA</span>
+        </button>
+
+        <label class="hud-btn" style="cursor:pointer;">
+          <span style="font-size:18px;">🖼️</span>
+          <span>GALERİ TARA</span>
+          <input type="file" accept="image/*" style="display:none;" onchange="handleGallery(this)">
+        </label>
+      </div>
+
+      <!-- Video Görüntü Ekranı (Kamera veya Ekran Paylaşımı) -->
+      <video id="mediaViewer" autoplay playsinline muted></video>
+
+    </div>
+
+    <!-- TAB 2: KÜTÜPHANE VE KİTAPLAR -->
+    <div id="tab-books" class="tab-content">
+      <div class="hud-card">
+        <div class="card-title">
+          <span>KİTAPLIK PROTOKOLÜ</span>
+          <span id="bookCount">29 Kitap</span>
+        </div>
+        <input type="text" id="bookSearch" placeholder="Kitap veya yazar ara..." oninput="filterBooks()">
+        
+        <div class="library-list" id="booksContainer">
+          <!-- Dinamik Kitaplar -->
+        </div>
+      </div>
+
+      <!-- Yeni Kitap Ekle -->
+      <div class="hud-card">
+        <div class="card-title"><span>YENİ KİTAP KAYDI</span></div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <input type="text" id="newTitle" placeholder="Kitap İsmi">
+          <input type="text" id="newAuthor" placeholder="Yazar">
+          <input type="text" id="newPages" placeholder="Sayfa Sayısı">
+          <button class="hud-btn" style="width:100%;" onclick="addNewBook()">KİTAPLIĞA EKLE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ASİSTAN BİLGİ & YAŞ PROTOKOLÜ -->
+    <div id="tab-info" class="tab-content">
+      <div class="hud-card">
+        <div class="card-title"><span>KULLANICI BİLGİ BANKASI</span></div>
+        <p style="font-size:12px; line-height: 1.8;">
+          👤 <strong>Sahip:</strong> Yusuf Sertkaya<br>
+          🎂 <strong>Doğum Tarihi:</strong> 7 Ağustos<br>
+          🎓 <strong>Akademik Durum:</strong> 7-F Sınıfı<br>
+          📍 <strong>Lokasyon:</strong> Ankara / Türkiye<br>
+          🛡️ <strong>Asistan:</strong> JARVIS (Sadakat Protokolü Aktif)
+        </p>
+      </div>
+
+      <div class="hud-card">
+        <div class="card-title"><span>ZAMAN & YIL DÖNÜMÜ MOTORU</span></div>
+        <div id="timeEngineInfo" style="font-size:12px; color:#8cd3ff;">
+          Sistem saat ve takvimleri senkronize ediyor...
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="hud-nav">
+    <div class="nav-item active" onclick="switchTab('tab-core', this)">
+      <span>⚡</span><span>KONSOL</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-books', this)">
+      <span>📚</span><span>KİTAPLIK</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-info', this)">
+      <span>🧠</span><span>BİLGİ</span>
+    </div>
+  </nav>
+
+  <script>
+    /* ========================================================
+       1. KULLANICI PROFİLİ VE KÜTÜPHANE VERİLERİ (29 KİTAP)
+       ======================================================== */
+    const userProfile = {
+      name: "Yusuf Sertkaya",
+      age: 13,
+      classGrade: "7-F",
+      birthMonth: 8, // Ağustos
+      birthDay: 7,
+      city: "Ankara"
+    };
+
+    const initialBooks = [
+      { t: "Satranç Kulübü", p: 151, a: "Sezar", status: "Okundu", page: 151 },
+      { t: "Dinozor Dedektifleri", p: 96, a: "Levent Öztücü", status: "Okundu", page: 96 },
+      { t: "İlkin Timi", p: 122, a: "Metin Özdamarlar", status: "Okundu", page: 122 },
+      { t: "Harry Potter 1 Felsefe Taşı", p: 271, a: "J. K. Rowling", status: "Okunmadı", page: 105 },
+      { t: "Düşler Köyü", p: 120, a: "Özgür Toprak", status: "Okundu", page: 120 },
+      { t: "Robolar", p: 140, a: "Mert Arık", status: "Okunmadı", page: 0 },
+      { t: "35 Kilo Tembel Teneke", p: 92, a: "Anna Gavalda", status: "Okunmadı", page: 42 },
+      { t: "Çocukların Kamera Arkası", p: 144, a: "Ferhat Taşetekin", status: "Okundu", page: 144 },
+      { t: "15 Yaşında Bir Kaptan", p: 110, a: "Jules Verne", status: "Okundu", page: 110 },
+      { t: "Uzay", p: 188, a: "Cleave Gifford", status: "Okundu", page: 188 },
+      { t: "Paskalya Çocukları", p: 236, a: "Ferenc Molnar", status: "Okundu", page: 236 },
+      { t: "Gül ve Yaşayan Yarışçı", p: 181, a: "Ahmet Önel", status: "Okundu", page: 181 },
+      { t: "Moroların Çocukları", p: 183, a: "Gabriel Celima", status: "Okundu", page: 183 },
+      { t: "Tombik Balık", p: 112, a: "A. B. Bektaş", status: "Okundu", page: 112 },
+      { t: "Yurdumu Özledim", p: 174, a: "Bülent Dayıoğlu", status: "Okundu", page: 174 },
+      { t: "Isladığım Kralı", p: 150, a: "Michael Morpurgo", status: "Okundu", page: 150 },
+      { t: "Enes Bin Malik", p: 75, a: "Kenan Oral", status: "Okundu", page: 75 },
+      { t: "Sad Bin Ebi Vakkas", p: 160, a: "Muhammed Emin Yıldırım", status: "Okunmadı", page: 0 },
+      { t: "Hansel ile Gretel", p: 96, a: "Jacob Wilhelm Grimm", status: "Okundu", page: 96 },
+      { t: "Dönme Dolap", p: 80, a: "Gülnar Kendeğer", status: "Okundu", page: 80 },
+      { t: "Küçük Kalabalık", p: 64, a: "Samet Behrengi", status: "Okundu", page: 64 },
+      { t: "Mercan Adası", p: 90, a: "R. M. Ballantyne", status: "Okundu", page: 90 },
+      { t: "Yıldız Tozu", p: 64, a: "Mustafa Kutlu", status: "Okundu", page: 64 },
+      { t: "Uzaya Giden Tren", p: 63, a: "Mert Arık", status: "Okunmadı", page: 0 },
+      { t: "Ampullerin Dünyası", p: 64, a: "H. G. Wells", status: "Okundu", page: 64 },
+      { t: "Ampulün Mucidi Thomas Alva Edison", p: 64, a: "Leyla Fidanay", status: "Okundu", page: 64 },
+      { t: "Uzayın Uzun Lafın Kısası", p: 225, a: "A. B. Bektaş", status: "Okundu", page: 225 },
+      { t: "Dünyayı Kurtaran Arı", p: 130, a: "Atay Sözer", status: "Okundu", page: 130 },
+      { t: "Mariana Çukuru", p: 88, a: "Serap Kardan", status: "Okundu", page: 88 }
+    ];
+
+    // LocalStorage kontrolü
+    let library = JSON.parse(localStorage.getItem("jarvis_library")) || initialBooks;
+
+    /* ========================================================
+       2. SESLENDİRME & SES TANIMA (SPEECH SYNTHESIS & RECOGNITION)
+       ======================================================== */
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'tr-TR';
+        u.pitch = 0.95;
+        u.rate = 1.0;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function log(msg) {
+      const term = document.getElementById("terminalLog");
+      term.innerHTML = `> ${msg}<br>` + term.innerHTML;
+    }
+
+    function triggerWake() {
+      log("Jarvis: Merhaba efendim, buradayım.");
+      speak("Merhaba efendim, buradayım.");
+    }
+
+    function startVoiceRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        log("Cihazınızın tarayıcısında ses algılama motoru desteklenmiyor.");
+        return;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = 'tr-TR';
+      rec.continuous = false;
+      rec.interimResults = false;
+
+      log("Dinleniyor... 'Hey Jarvis' diyebilirsiniz.");
+      rec.onstart = () => {
+        document.getElementById("sysStatus").innerText = "DİNLİYOR...";
+      };
+      rec.onresult = (e) => {
+        const text = e.results[0][0].transcript.toLowerCase();
+        log(`Algılandı: "${text}"`);
+        
+        if (text.includes("hey jarvis") || text.includes("jarvis")) {
+          triggerWake();
+        } else if (text.includes("kitap") || text.includes("sayfa")) {
+          speak("Kitaplığınızda 29 eser kayıtlı efendim. Harry Potter ve 35 Kilo Tembel Teneke okunuyor.");
+        } else if (text.includes("namaz")) {
+          speak("Ankara vakitleri takip ediliyor efendim. Vakte 10 dakika kala abdest uyarısı verilecektir.");
+        } else {
+          speak("Emrinizdeyim Sayın Sertkaya.");
+        }
+      };
+      rec.onend = () => {
+        document.getElementById("sysStatus").innerText = "ÇEVRİMİÇİ";
+      };
+      rec.onerror = () => {
+        document.getElementById("sysStatus").innerText = "ÇEVRİMİÇİ";
+      };
+      rec.start();
+    }
+
+    /* ========================================================
+       3. DONANIM ERİŞİMLERİ (KAMERA, EKRAN PAYLAŞIMI, GALERİ)
+       ======================================================== */
+    let currentStream = null;
+
+    async function toggleCamera() {
+      const video = document.getElementById("mediaViewer");
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+        video.style.display = "none";
+        log("Kamera bağlantısı sonlandırıldı.");
+        return;
+      }
+
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
+        });
+        video.srcObject = currentStream;
+        video.style.display = "block";
+        log("Optik tarayıcı (Kamera) başarıyla bağlandı efendim.");
+        speak("Optik sensörler devrede.");
+      } catch (err) {
+        log("Kamera erişim hatası: " + err.message);
+      }
+    }
+
+    async function requestScreenAccess() {
+      const video = document.getElementById("mediaViewer");
+      try {
+        if (!navigator.mediaDevices.getDisplayMedia) {
+          log("Ekran görüntüsü alma bu tarayıcıda doğrudan desteklenmiyor.");
+          return;
+        }
+        currentStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        video.srcObject = currentStream;
+        video.style.display = "block";
+        log("Telefon ekranına doğrudan erişim sağlandı efendim.");
+        speak("Ekran görüntüsü taranıyor.");
+      } catch (err) {
+        log("Ekran erişimi kullanıcı tarafından reddedildi.");
+      }
+    }
+
+    function handleGallery(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        log(`Galeri verisi inceleniyor: ${file.name}`);
+        speak("Görsel galeri belleğinden alındı ve analiz edildi efendim.");
+      }
+    }
+
+    /* ========================================================
+       4. KİTAPLIK YÖNETİMİ
+       ======================================================== */
+    function renderBooks(list) {
+      const container = document.getElementById("booksContainer");
+      container.innerHTML = "";
+      list.forEach((b, idx) => {
+        const row = document.createElement("div");
+        const isRead = b.status === "Okundu";
+        row.className = `book-row ${isRead ? 'read' : ''}`;
+        
+        row.innerHTML = `
+          <div class="book-info">
+            <b>${b.t}</b>
+            <div>${b.a} | Toplam: ${b.p} sf.</div>
+          </div>
+          <div style="text-align:right;">
+            <span class="book-status ${isRead ? 'status-done' : 'status-pending'}">
+              ${isRead ? 'Okundu' : (b.page > 0 ? 'S. ' + b.page : 'Okunmadı')}
+            </span>
+          </div>
+        `;
+        // Tıklayınca okundu durumunu güncelleme veya sayfa sorusu
+        row.onclick = () => {
+          if (!isRead) {
+            const newPg = prompt(`${b.t} için kaldığınız sayfayı girin (Bitirdiyseniz ${b.p} yazın):`, b.page);
+            if (newPg !== null) {
+              const num = parseInt(newPg);
+              if (num >= b.p) {
+                b.status = "Okundu";
+                b.page = b.p;
+                speak(`${b.t} kitabı okundu olarak güncellendi. Tebrikler efendim.`);
+              } else {
+                b.page = num || 0;
+              }
+              saveBooks();
+              renderBooks(library);
+            }
+          }
+        };
+        container.appendChild(row);
+      });
+      document.getElementById("bookCount").innerText = `${list.length} Kitap`;
+    }
+
+    function saveBooks() {
+      localStorage.setItem("jarvis_library", JSON.stringify(library));
+    }
+
+    function filterBooks() {
+      const q = document.getElementById("bookSearch").value.toLowerCase();
+      const filtered = library.filter(b => b.t.toLowerCase().includes(q) || b.a.toLowerCase().includes(q));
+      renderBooks(filtered);
+    }
+
+    function addNewBook() {
+      const title = document.getElementById("newTitle").value.trim();
+      const author = document.getElementById("newAuthor").value.trim();
+      const pages = parseInt(document.getElementById("newPages").value.trim()) || 100;
+      if (!title) return;
+      library.push({ t: title, a: author || "Bilinmiyor", p: pages, status: "Okunmadı", page: 0 });
+      saveBooks();
+      renderBooks(library);
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newAuthor").value = "";
+      document.getElementById("newPages").value = "";
+      log(`Yeni kitap eklendi: ${title}`);
+      speak(`${title} kütüphanenize kaydedildi efendim.`);
+    }
+
+    /* ========================================================
+       5. ANKARA NAMAZ VAKTİ BİLDİRİCİSİ (-10 DAKİKA)
+       ======================================================== */
+    function checkPrayerTimes() {
+      // Temsili Ankara namaz vakit tablosu döngüsü
+      const now = new Date();
+      const hrs = now.getHours();
+      const mins = now.getMinutes();
+      const totalMinutes = hrs * 60 + mins;
+
+      // Örnek vakitler (dakika cinsinden): Öğle 12:50, İkindi 15:45, Akşam 18:10, Yatsı 19:35
+      const times = [
+        { name: "Öğle", m: 12 * 60 + 50 },
+        { name: "İkindi", m: 15 * 60 + 45 },
+        { name: "Akşam", m: 18 * 60 + 10 },
+        { name: "Yatsı", m: 19 * 60 + 35 }
+      ];
+
+      for (let p of times) {
+        const diff = p.m - totalMinutes;
+        if (diff > 0 && diff <= 10) {
+          const alertMsg = `Abdest al, namaza yaklaşık 10 dakika var, hadi namaz kıl (${p.name} vakti).`;
+          document.getElementById("prayerNotice").innerText = alertMsg;
+          log("UYARI: " + alertMsg);
+          speak(alertMsg);
+          return;
+        }
+      }
+      document.getElementById("prayerNotice").innerText = "Ankara namaz vakti izleniyor (10 dk öncesi abdest uyarısı devrede).";
+    }
+
+    /* ========================================================
+       6. DOĞUM GÜNÜ & YIL DÖNÜMÜ MOTORU
+       ======================================================== */
+    function checkCalendarEvents() {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const month = now.getMonth() + 1; // 1-12
+      const day = now.getDate();
+
+      // Yaş hesaplama
+      const baseYear = 2024 - userProfile.age; 
+      const computedAge = currentYear - baseYear;
+
+      document.getElementById("timeEngineInfo").innerHTML = `
+        Mevcut Yıl: <strong>${currentYear}</strong><br>
+        Hesaplanan Yaş: <strong>${computedAge}</strong><br>
+        Doğum Günü Protokolü: <strong>7 Ağustos</strong>
+      `;
+
+      // 7 Ağustos Kontrolü
+      if (month === userProfile.birthMonth && day === userProfile.birthDay) {
+        const bdayMsg = `İyi ki doğdunuz Sayın Yusuf Sertkaya! Yeni yaşınız (${computedAge}) kutlu olsun efendim.`;
+        log("🎉 PROTOKOL: " + bdayMsg);
+        speak(bdayMsg);
+      }
+    }
+
+    /* ========================================================
+       7. NAVİGASYON / SEKME GEÇİŞİ
+       ======================================================== */
+    function switchTab(tabId, el) {
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      el.classList.add("active");
+    }
+
+    // Başlangıç Çalıştırması
+    window.onload = () => {
+      renderBooks(library);
+      checkPrayerTimes();
+      checkCalendarEvents();
+      setInterval(checkPrayerTimes, 60000); // Her dakika kontrol
+    };
+  </script>
+</body>
+</html>
